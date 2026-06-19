@@ -1,7 +1,7 @@
 <?php
 // config/db.php
 
-$host = 'localhost';
+$host = '127.0.0.1';
 $db   = 'pharmalife_db'; // Mis à jour avec le nom exact de ta base de données
 $user = 'root';
 $pass = ''; // Vide par défaut sur XAMPP
