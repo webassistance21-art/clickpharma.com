@@ -1,0 +1,21 @@
+<?php
+// config/db.php
+
+$host = 'localhost';
+$db   = 'pharmalife_db'; // Mis à jour avec le nom exact de ta base de données
+$user = 'root';
+$pass = ''; // Vide par défaut sur XAMPP
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+try {
+     $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (\PDOException $e) {
+     throw new \PDOException($e->getMessage(), (int)$e->getCode());
+}
