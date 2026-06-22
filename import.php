@@ -3,7 +3,8 @@
 ini_set('max_execution_time', 300);
 
 $host = 'mysql-clickpharma-webassistance21-9abf.b.aivencloud.com';
-$port = '15899';
+$port = '15899'; // Remplacez par votre vrai port Aiven
+$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
 $dbname = 'defaultdb';
 $username = 'avnadmin';
 $password = 'AVNS_xkSJ6bwVpziBDucxm5I';
