@@ -1,5 +1,5 @@
 <?php
-require_once 'config/setup.php' // Connexion à ta base pharmalife_db
+require_once 'config/setup.php'; // Connexion à ta base pharmalife_db
 // Gestion de la langue (Par défaut : Français)
 $lang = $_GET['lang'] ?? 'fr';
 if (!in_array($lang, ['fr', 'ar'])) {
