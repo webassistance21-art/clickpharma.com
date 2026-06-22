@@ -12,9 +12,10 @@ try {
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     echo "<h3>Connexion réussie à Aiven !</h3>";
 
-    // ⚡ DESACTIVATION DE LA SECURITE DES CLES PRIMAIRES D'AIVEN
+    // ⚡ Désactivation des contraintes pour tout écraser sans erreur
     $db->exec("SET SESSION sql_require_primary_key = 0;");
-    echo "Sécurité 'sql_require_primary_key' désactivée temporairement.<br>";
+    $db->exec("SET FOREIGN_KEY_CHECKS = 0;");
+    echo "Sécurités temporairement désactivées.<br>";
 
     $sqlFiles = glob("*.sql");
     if (empty($sqlFiles)) {
@@ -29,13 +30,22 @@ try {
     $query = preg_replace('/CREATE DATABASE.*?;\s*/i', '', $query);
     $query = preg_replace('/USE .*?;\s*/i', '', $query);
 
+    // ⚡ On ajoute automatiquement "DROP TABLE IF EXISTS" avant chaque création de table
+    $query = preg_replace('/CREATE TABLE/i', 'DROP TABLE IF EXISTS', $query) . "\n" . $query;
+    // Note: Pour éviter un doublon complexe, on va plutôt exécuter le script directement, 
+    // mais pour faire au plus simple et le plus propre, voici la version corrigée globale :
+    
+    // Suppression propre de la table qui bloque
+    $db->exec("DROP TABLE IF EXISTS `administrateurs`, `utilisateurs`, `patients`, `ordonnances`, `medicaments`;");
+
     // Exécution globale du script SQL
-    $db->exec($query);
+    $db->exec(file_get_contents($fileToImport));
     
-    // ⚡ REACTIVATION DE LA SECURITE
+    // ⚡ Réactivation des sécurités
     $db->exec("SET SESSION sql_require_primary_key = 1;");
+    $db->exec("SET FOREIGN_KEY_CHECKS = 1;");
     
-    echo "<h2 style='color:green;'>🎉 Victoire ! Vos tables ont été importées avec succès dans defaultdb !</h2>";
+    echo "<h2 style='color:green;'>🎉 Victoire absolue ! Toutes vos tables ont été importées avec succès !</h2>";
 
 } catch (PDOException $e) {
     die("<h2 style='color:red;'>Erreur :</h2> " . $e->getMessage());
