@@ -1,16 +1,23 @@
 <?php
-// config/setup.php
+$host = 'mysql-clickpharma-webassistance21-9abf.b.aivencloud.com';
+$port = '15899';
+$dbname = 'defaultdb';
+$username = 'avnadmin';
+$password = 'AVNS_xkSJ6bwVpziBDucxm5I';
 
-// 1. Activation sécurisée de la session si elle n'est pas déjà lancée
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+try {
+    // Ajout des options pour forcer la connexion SSL
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, // Permet de se connecter sans configurer le fichier .pem localement
+    ];
+
+    $db = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8", $username, $password, $options);
+    
+    // Petit message de validation (optionnel, à retirer plus tard)
+    // echo "Connexion réussie !"; 
+    
+} catch (PDOException $e) {
+    die("Erreur de connexion : " . $e->getMessage());
 }
-
-// 2. Encapsulation globale pour la sécurité anti-XSS dans l'affichage HTML
-function e($string) {
-    return htmlspecialchars($string ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-// 3. Constantes de l'application
-define('APP_NAME', 'Click Pharma');
-define('LOGO_PATH', 'images/Pharma (1).png');
+?>
