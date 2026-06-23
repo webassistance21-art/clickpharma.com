@@ -50,10 +50,6 @@ if (!$patient) {
 
 $age = !empty($patient['date_naissance']) ? (new DateTime())->diff(new DateTime($patient['date_naissance']))->y . (($lang === 'fr') ? " ans" : " سنة") : "N/A";
 
-/* CORRECTION DE L'ERREUR DE COLLATION :
-   On ajoute "COLLATE utf8mb4_general_ci" après le LIKE pour harmoniser les encodages
-   et éviter le conflit entre utf8mb4_unicode_ci et utf8mb4_general_ci.
-*/
 $query_ord = "SELECT o.*, 
                      (SELECT r.statut 
                       FROM reservations r 
@@ -95,7 +91,8 @@ $txt = [
         'modal_status_active' => "Caméra active : Alignez le QR Code",
         'modal_status_success' => "Code détecté !",
         'modal_err' => "Impossible d'accéder à la caméra. Vérifiez les autorisations.",
-        'modal_close' => "Annuler et Fermer"
+        'modal_close' => "Annuler et Fermer",
+        'notif_title' => 'Mes Réservations'
     ],
     'ar' => [
         'title' => 'فضائي الصحي | ClickPharma',
@@ -122,7 +119,8 @@ $txt = [
         'modal_status_active' => "الكاميرا مشغلة: ضع رمز QR في الإطار",
         'modal_status_success' => "تم التعرف على الرمز !",
         'modal_err' => "فشل الاتصال بالكاميرا. يرجى التحقق من الصلاحيات.",
-        'modal_close' => "إلغاء وإغلاق"
+        'modal_close' => "إلغاء وإغلاق",
+        'notif_title' => 'حجوزاتي'
     ]
 ];
 ?>
@@ -154,17 +152,31 @@ $txt = [
                 </div>
             </div>
             
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 sm:gap-4">
                 <div class="bg-[#00825c] px-3 py-1.5 rounded-xl flex gap-3 text-xs font-bold shadow-inner">
                     <a href="?lang=fr" class="<?= ($lang === 'fr') ? 'text-white underline underline-offset-4' : 'text-emerald-200/70 hover:text-white' ?>">FR</a>
                     <span class="text-emerald-400">|</span>
                     <a href="?lang=ar" class="<?= ($lang === 'ar') ? 'text-white underline underline-offset-4' : 'text-emerald-200/70 hover:text-white' ?>">العربية</a>
                 </div>
 
+                <div class="relative">
+                    <button onclick="togglePatientNotifs(event)" class="bg-[#00825c] hover:bg-[#006e4e] p-2.5 rounded-xl transition text-xs shadow-inner relative flex items-center justify-center">
+                        <i class="fa-solid fa-bell text-sm"></i>
+                        <span id="patientBadge" class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center border border-white hidden animate-bounce">0</span>
+                    </button>
+                    <div id="patientNotifPanel" class="absolute <?= ($lang === 'ar') ? 'left-0' : 'right-0' ?> mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-4 hidden text-slate-800 z-50">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-400 mb-3 border-b border-slate-100 pb-2"><?= $txt[$lang]['notif_title'] ?></h4>
+                        <div id="patientNotifList" class="max-h-60 overflow-y-auto pr-1">
+                            <p class="text-center py-6 text-xs text-slate-400 italic">Aucune nouvelle mise à jour</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="text-right hidden sm:block">
                     <p class="text-[9px] uppercase font-bold text-emerald-100 tracking-wider"><?= $txt[$lang]['welcome'] ?></p>
                     <p class="font-bold text-xs"><?= htmlspecialchars($patient['prenom'] . ' ' . $patient['nom']) ?></p>
                 </div>
+                
                 <a href="logout.php" class="bg-[#00825c] hover:bg-red-600 p-2.5 rounded-xl transition text-xs shadow-inner">
                     <i class="fa-solid fa-power-off"></i>
                 </a>
@@ -186,7 +198,6 @@ $txt = [
     </div>
 
     <main class="container mx-auto p-4 max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
-        
         <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm h-fit">
             <div class="text-center border-b border-slate-100 pb-4 mb-4">
                 <div class="w-16 h-16 bg-emerald-50 text-[#00966b] rounded-2xl flex items-center justify-center text-2xl font-black mx-auto mb-3">
@@ -262,7 +273,7 @@ $txt = [
                             $statut_trad = ($lang === 'ar') ? (($ord['statut'] === 'Validée') ? 'مقبولة' : 'قيد الانتظار') : $ord['statut'];
                             
                             $res_statut = $ord['statut_reservation'] ?? '';
-                            $is_deja_reserve = (strcasecmp($res_statut, 'Prêt') == 0 || strcasecmp($res_statut, 'accepte') == 0 || strcasecmp($res_statut, 'accepter') == 0);
+                            $is_deja_reserve = (strcasecmp($res_statut, 'Prêt') == 0 || strcasecmp($res_statut, 'accepte') == 0 || strcasecmp($res_statut, 'accepter') == 0 || strcasecmp($res_statut, 'valide') == 0);
                         ?>
                             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-5">
                                 <div class="space-y-3 flex-1">
@@ -315,7 +326,6 @@ $txt = [
 
     <div id="scanner-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden relative p-6 space-y-4">
-            
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2 text-slate-800">
                     <i class="fa-solid fa-camera text-emerald-600 text-lg"></i>
@@ -343,38 +353,66 @@ $txt = [
     </div>
 
     <script type="text/javascript">
-     let html5QrCode = null;
+    let html5QrCode = null;
+    const currentLang = "<?= $lang ?>";
 
-    // --- PARTIE 1 : SCANNER QR ---
-   function ouvrirScanner() {
-    const modal = document.getElementById('scanner-modal');
-    modal.classList.remove('hidden');
+    // --- CORRECTION : AJOUT DE LA RECHERCHE TEXTUELLE GLOBALE VIA AJAX ---
+    function lancerRechercheGlobal() {
+        const input = document.getElementById('searchInputGlobal');
+        const query = input.value.trim();
+        const zone = document.getElementById('zoneResultatsPharmacie');
 
-    if (html5QrCode === null) {
-        html5QrCode = new Html5Qrcode("reader");
+        if (query === "") {
+            zone.innerHTML = "";
+            return;
+        }
+
+        zone.innerHTML = `
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center text-xs font-bold text-slate-500">
+                <i class="fa-solid fa-circle-notch animate-spin text-[#00966b] mr-2 text-sm"></i>
+                ${currentLang === 'ar' ? 'جاري البحث...' : 'Recherche en cours...'}
+            </div>`;
+
+        // Requête vers votre fichier existant de traitement
+        fetch(`ajax_recherche.php?query=${encodeURIComponent(query)}`)
+        .then(response => response.text())
+        .then(html => {
+            zone.innerHTML = html;
+        })
+        .catch(err => {
+            console.error("Erreur de recherche:", err);
+            zone.innerHTML = `
+                <div class="bg-red-50 text-red-700 p-4 rounded-xl text-xs font-bold border border-red-100">
+                    ${currentLang === 'ar' ? 'حدث خطأ أثناء البحث.' : 'Une erreur est survenue pendant la recherche.'}
+                </div>`;
+        });
     }
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    // --- PARTIE 1 : SCANNER QR ---
+    function ouvrirScanner() {
+        const modal = document.getElementById('scanner-modal');
+        modal.classList.remove('hidden');
 
-    html5QrCode.start(
-        { facingMode: "environment" }, 
-        config, 
-        (decodedText) => {
-            // LOGIQUE CORRIGÉE :
-            // On ne vérifie plus si c'est un nombre ou une URL.
-            // On prend le contenu du QR et on l'envoie direct à recherche_qr.php
-            const destination = "recherche_qr.php?token=" + encodeURIComponent(decodedText);
-            
-            console.log("Redirection vers : " + destination);
-            window.location.href = destination;
-        },
-        (errorMessage) => { /* Scan en cours... */ }
-    ).catch(err => {
-        console.error("Erreur caméra :", err);
-        alert("Accès caméra refusé.");
-        modal.classList.add('hidden');
-    });
-}
+        if (html5QrCode === null) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            config, 
+            (decodedText) => {
+                const destination = "recherche_qr.php?token=" + encodeURIComponent(decodedText);
+                window.location.href = destination;
+            },
+            (errorMessage) => { /* Scan en cours... */ }
+        ).catch(err => {
+            console.error("Erreur caméra :", err);
+            alert(currentLang === 'ar' ? "فشل الاتصال بالكاميرا." : "Accès caméra refusé ou indisponible.");
+            modal.classList.add('hidden');
+        });
+    }
 
     function fermerScanner() {
         if (html5QrCode) {
@@ -383,20 +421,18 @@ $txt = [
             }).catch(() => {
                 document.getElementById('scanner-modal').classList.add('hidden');
             });
+        } else {
+            document.getElementById('scanner-modal').classList.add('hidden');
         }
     }
 
-    // --- PARTIE 2 : NOTIFICATIONS (FUSIONNÉES) ---
-    let isPanelOpen = false;
-
+    // --- PARTIE 2 : SYSTEME DE NOTIFICATIONS OPÉRATIONNEL ---
     function togglePatientNotifs(e) {
         if(e) e.stopPropagation();
         const panel = document.getElementById('patientNotifPanel');
         const badge = document.getElementById('patientBadge');
         
-        isPanelOpen = !panel.classList.contains('hidden');
         panel.classList.toggle('hidden');
-        
         if (!panel.classList.contains('hidden')) {
             badge.classList.add('hidden'); 
         }
@@ -408,50 +444,54 @@ $txt = [
         .then(data => {
             const list = document.getElementById('patientNotifList');
             const badge = document.getElementById('patientBadge');
+            const isPanelHidden = document.getElementById('patientNotifPanel').classList.contains('hidden');
             
             if (data && data.length > 0) {
-                // On affiche le badge seulement si le panneau est fermé
-                if (document.getElementById('patientNotifPanel').classList.contains('hidden')) {
+                if (isPanelHidden) {
+                    badge.textContent = data.length;
                     badge.classList.remove('hidden');
                 }
                 
                 let html = '';
                 data.forEach(notif => {
-                    const isValide = notif.statut === 'valide';
+                    const isValide = notif.statut === 'valide' || notif.statut === 'Prêt' || notif.statut === 'accepte';
                     const colorClass = isValide ? 'emerald' : 'red';
-                    const statusText = isValide ? 'Confirmée' : 'Refusée';
+                    const statusText = isValide ? (currentLang === 'ar' ? 'مقبولة' : 'Confirmée') : (currentLang === 'ar' ? 'مرفوضة' : 'Refusée');
 
                     html += `
-                    <div class="p-3 rounded-xl mb-2 border border-${colorClass}-100 bg-${colorClass}-50/30">
+                    <div class="p-3 rounded-xl mb-2 border border-${colorClass}-100 bg-${colorClass}-50/30 text-left" dir="ltr">
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-[9px] font-black text-${colorClass}-600 uppercase">${statusText}</span>
-                            <span class="text-[8px] text-slate-400">${notif.date_commande}</span>
+                            <span class="text-[9px] font-black text-${colorClass}-600 uppercase tracking-wider">${statusText}</span>
+                            <span class="text-[8px] text-slate-400">${notif.date_commande || ''}</span>
                         </div>
                         <p class="text-[11px] font-bold text-slate-800">${notif.medicament_demande}</p>
-                        <p class="text-[9px] text-slate-500 mb-2">${notif.nom_pharmacie}</p>
-                        <button onclick="marquerCommeVu(${notif.id})" class="text-[9px] font-bold text-slate-400 hover:text-slate-600 uppercase">Ok, j'ai vu</button>
+                        <p class="text-[9px] text-slate-500 mb-2">${notif.nom_pharmacie || ''}</p>
+                        <button onclick="marquerCommeVu(${notif.id}, event)" class="text-[9px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-wider">
+                            ${currentLang === 'ar' ? 'قرأت الرسالة' : "Ok, j'ai vu"}
+                        </button>
                     </div>`;
                 });
                 list.innerHTML = html;
             } else {
-                list.innerHTML = '<p class="text-center py-6 text-xs text-slate-400 italic">Aucune nouvelle mise à jour</p>';
+                list.innerHTML = `<p class="text-center py-6 text-xs text-slate-400 italic">${currentLang === 'ar' ? 'لا توجد تحديثات جديدة' : 'Aucune nouvelle mise à jour'}</p>`;
                 badge.classList.add('hidden');
             }
         })
-        .catch(err => console.error("Erreur de vérification:", err));
+        .catch(err => console.error("Erreur de vérification des notifications:", err));
     }
 
-    function marquerCommeVu(idRes) {
+    function marquerCommeVu(idRes, event) {
+        if(event) event.stopPropagation();
         fetch('marquer_vu_patient.php?id=' + idRes)
         .then(() => checkMyReservations()); 
     }
 
-    // --- ÉVÉNEMENTS ---
+    // Fermeture automatique du panneau au clic n'importe où
     document.addEventListener('click', () => {
         document.getElementById('patientNotifPanel').classList.add('hidden');
     });
 
-    // Un seul intervalle de 10 secondes pour tout gérer
+    // Interroger toutes les 10 secondes
     setInterval(checkMyReservations, 10000);
     checkMyReservations();
     </script>
