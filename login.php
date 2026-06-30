@@ -16,7 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user = $stmt->fetch();
  
         // CORRECTION DU BUG : Utilisation de la bonne variable $motDePasseSaisi
-            if ($user && password_verify($motDePasseSaisi, $user['mot_de_passe'])) {
+           echo "<pre>Saisi : "; var_dump($motDePasseSaisi);
+echo "En Base : "; var_dump($user['mot_de_passe'] ?? 'Aucun utilisateur trouvé'); echo "</pre>";
+
+if ($user && $motDePasseSaisi === $user['mot_de_passe']) {
             $_SESSION['id_utilisateur'] = $user['id'];
             $_SESSION['utilisateur'] = $user['utilisateur'];
             
