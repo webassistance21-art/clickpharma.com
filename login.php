@@ -15,14 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$identifiantSaisi]);
         $user = $stmt->fetch();
  $user = $stmt->fetch();
-
-// AJOUTE CE CODE TEMPORAIRE :
-if (!$user) {
-    echo "<p style='color:red; text-align:center;'>Erreur : L'identifiant n'existe pas du tout dans la base en ligne !</p>";
-} else {
-    echo "<p style='color:green; text-align:center;'>Utilisateur trouvé ! Rôle en base : " . htmlspecialchars($user['role']) . "</p>";
-}
-    
+ 
 
 if ($user && $motDePasseSaisi === $user['mot_de_passe']) {
             $_SESSION['id_utilisateur'] = $user['id'];
