@@ -14,10 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $pdo->prepare("SELECT id, utilisateur, mot_de_passe, role FROM utilisateurs WHERE utilisateur = ?");
         $stmt->execute([$identifiantSaisi]);
         $user = $stmt->fetch();
- $user = $stmt->fetch();
  
-
-if ($user && $motDePasseSaisi === $user['mot_de_passe']) {
+        // Vérification du mot de passe
+        if ($user && $motDePasseSaisi === $user['mot_de_passe']) {
+            
             $_SESSION['id_utilisateur'] = $user['id'];
             $_SESSION['utilisateur'] = $user['utilisateur'];
             
@@ -177,7 +177,7 @@ if ($user && $motDePasseSaisi === $user['mot_de_passe']) {
                     el.classList.add('text-left', 'ml-1');
                 }
             });
-
+ 
             // Application des textes
             document.getElementById('title').innerText = d.title;
             document.getElementById('subtitle').innerText = d.subtitle;
