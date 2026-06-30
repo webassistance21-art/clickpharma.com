@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user = $stmt->fetch();
  
         // Vérification du mot de passe
-        if ($user && $motDePasseSaisi === $user['mot_de_passe']) {
+        if ($user && strcmp($motDePasseSaisi, trim($user['mot_de_passe'])) === 0) {
             
             $_SESSION['id_utilisateur'] = $user['id'];
             $_SESSION['utilisateur'] = $user['utilisateur'];
